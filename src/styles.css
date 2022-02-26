@@ -2,6 +2,12 @@
   box-sizing: border-box;
 }
 
+/* At the top level of your code */
+@media screen and (min-width: 900px) {
+  .button {
+    left: 40vw;
+  }
+}
 html,
 body,
 #root {
@@ -20,6 +26,15 @@ body,
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, avenir next, avenir, helvetica neue, helvetica, ubuntu, roboto, noto,
-    segoe ui, arial, sans-serif;
+  font-family: helvetica neue, helvetica !important;
+    color:white;
+}
+
+.button {
+    transform: translateX(-50%) !important;
+    
+}
+
+input {
+    transform: translateX(-50%) !important;
 }
