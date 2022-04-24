@@ -23,14 +23,15 @@ function TextMesh({ mass = 1, children, vAlign = 'center', hAlign = 'center', si
     [font]
   )
   const mesh = useRef({mass:1})
+  const [ref, api] = useBox(() => ({ mass: 1 }))
   useLayoutEffect(() => {
     const size = new THREE.Vector3()
-    mesh.current.geometry.computeBoundingBox()
-    mesh.current.geometry.boundingBox.getSize(size)
+   // mesh.current.geometry.computeBoundingBox()
+   // mesh.current.geometry.boundingBox.getSize(size)
   }, [children])
   return (
     <group {...props} scale={[0.1 * size, 0.1 * size, 0.1]} >
-      <mesh ref={mesh}>
+      <mesh ref={ref}>
         <textGeometry args={[children, config]} />
         <meshNormalMaterial />
       </mesh>
@@ -58,12 +59,15 @@ const stepAtom = atom({key:"step", default:0})
 const wordsAtom = atom({key:"words", default:[]})
 const Camera = (props) => {
   const [step, setStep] = useRecoilState(stepAtom)
+    const words = useRecoilValue(wordsAtom);
   const {
-  camera
+  camera,
+      mouse
 } = useThree();
   const ref = useRef();
   const set = useThree((state) => state.set);
   const v = new THREE.Vector3()
+
   useEffect(() => void set({ camera: ref.current }), []);
   useFrame(({clock, camera}) => {
       if (camera.position.z < 850) {
@@ -75,6 +79,9 @@ const Camera = (props) => {
           camera.position.lerp(v.set(ref.current.enter ? 0 : 0, ref.current.enter ? 0 : 0, ref.current.enter ? 0 : 10), 0.002)
           }
   });
+
+
+
   useEffect(() => {
   const interval = setInterval(() => {
     console.log(ref.current.position)
@@ -107,9 +114,9 @@ const Camera = (props) => {
   return () => clearInterval(interval);
 }, []);
 
-  return <Suspense> 
+  return <> 
         <perspectiveCamera ref={ref} {...props} />;
-    </Suspense>
+        </>
 }
 
 
@@ -123,7 +130,7 @@ function Embeded(){
     const [enter, setEnter] = useState(false)
     const step = useRecoilValue(stepAtom)
     const entered = useRef()
-    const tracker = useRef(0)
+    const tracker = React.useRef()
 
     let tracked = 0
     const [stepped, setStep] = useRecoilState(stepAtom)
@@ -152,11 +159,9 @@ function Embeded(){
     }
     let count = 0
 
-    return  <Suspense fallback={null}>
-      <Stars />
-      <ambientLight intensity={0.3} />
-      <spotLight position={[40, 11, 15]} angle={0.8} />
-        <Camera step={step} enter={enter} entered={entered} ref={tracker}/>
+    return  <>
+      <Camera step={step} enter={enter} entered={entered} ref={tracker} />
+        { words.length === 0 && <Camera step={step} enter={enter}  />}
         <ScrollControls damping={4} pages={1}>
 
           <Scroll html>
@@ -249,38 +254,58 @@ function Embeded(){
         </>}
           </Scroll>
         </ScrollControls>
-        <Physics>
+        </>
+    }
+const RenderWords = () => {
+
+    let counted = -130
+    let height = 20
+    const words = useRecoilValue(wordsAtom);
+    
+     return   <Suspense>
         {words.length !== 0 &&
             words.map((word, i)=>{
                 if (word === " " ) {
                 
-                counted+=7
-                    return}
+                return counted+=7
+                    }
 
                 console.log(word.charCodeAt(0))
                 if (between(word.charCodeAt(0),65,122)){
                 const caps = word.charAt(0).toUpperCase()
                 counted+=7
-                return <TextMesh hAlign="right" position={[counted, height, -250]} children={caps}/>
+                return <TextMesh hAlign="right" key={i+'a'} position={[counted, height, -250]} children={caps}/>
                 }
                 return
             })
         }
-        </Physics>
-        <Preload/>
-      </Suspense>
-    }
+    </Suspense>
+
+}
 export default function App(){ 
     return (
       <Canvas style={{height:"100vh", width:"100vw"}} >
-        <RecoilRoot>
         <Suspense>
-        <Embeded/>
-        <CameraShake yawFrequency={0.03} rollFrequency={0.03} pitchFrequency={0.03} maxPitch={0.05} maxRoll={0.05} maxYaw={0.05}/ >
-        <OrbitControls/>
-        </Suspense>
-        </RecoilRoot>
+      <Stars />
+          <CameraShake
+            yawFrequency={0.03}
+            rollFrequency={0.03}
+            pitchFrequency={0.03}
+            maxPitch={0.05}
+            maxRoll={0.05}
+            maxYaw={0.05}
+          />
+          <OrbitControls />
+      <ambientLight intensity={0.3} />
+      <spotLight position={[40, 11, 15]} angle={0.8} />
+         <Physics gravity={[0, -30, 0]}>
+        <RecoilRoot>
+        <RenderWords/>
+       <Embeded /> 
 
+        </RecoilRoot>
+        </Physics>
+        </Suspense>
     </Canvas>
   );
 }
